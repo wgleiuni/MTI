@@ -94,5 +94,5 @@ if BS==1
     subplot(2,1,2)
     
     plot(kpara/pi,BEi,'bo','Markersize',1)
-    ylim([1.3 2.1]);
+    %ylim([1.3 2.1]);
 end

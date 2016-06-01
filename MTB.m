@@ -2,10 +2,11 @@
 % Three band material
 
 %% Parameters
-eta1=0.001;
-eta2=2;
+eta1=0;
+eta2=0;
 kappa1=1;
 kappa2=1;
+BS=1;
 m1=2;
 m2=2;
 m3=2;
@@ -60,11 +61,20 @@ if dim==1
     
     %% Figure
     figure
-    set(gcf,'position',[2000,400,570,422],'color','w')
-    tEi=Ei;
-    tEi(tEi<0)=NaN;
-    plot(sqrt((tEi)))
-    title(['$\eta_1=$',num2str(eta1),' $\eta_2=$',num2str(eta2),' $\kappa_1=$',num2str(kappa1),' $\kappa_2=$',num2str(kappa2)],'interpreter','latex')
+    if BS~=1
+        set(gcf,'position',[2000,400,570,422],'color','w')
+        tEi=Ei;
+        tEi(tEi<0)=NaN;
+        plot(sqrt((tEi)))
+        title(['$\eta_1=$',num2str(eta1),' $\eta_2=$',num2str(eta2),' $\kappa_1=$',num2str(kappa1),' $\kappa_2=$',num2str(kappa2)],'interpreter','latex')
+    elseif BS==1
+        set(gcf,'position',[2000,400,570,844],'color','w')
+        subplot(2,1,1);
+        tEi=Ei;
+        tEi(tEi<0)=NaN;
+        plot(sqrt((tEi)))
+        title(['$\eta_1=$',num2str(eta1),' $\eta_2=$',num2str(eta2),' $\kappa_1=$',num2str(kappa1),' $\kappa_2=$',num2str(kappa2)],'interpreter','latex')
+    end
 elseif dim==2
     kx=linspace(-2*pi,2*pi,101);
     ky=kx;
@@ -90,4 +100,51 @@ elseif dim==2
     end
     view(45,45)
     title(['$\eta_1=$',num2str(eta1),' $\eta_2=$',num2str(eta2),' $\kappa_1=$',num2str(kappa1),' $\kappa_2=$',num2str(kappa2)],'interpreter','latex')
+end
+
+%% Ribbon band structure
+if BS==1
+    n=40;
+    H=zeros((6*n+6)*2);
+    temp=zeros(6);
+    temp(1:2,1:2)=3*kappa2*(1-eta2/2)*eye(2);
+    temp(3:4,3:4)=3*kappa1*(1-eta1/2)*eye(2)+3*kappa2*(1-eta2/2)*eye(2);
+    temp(5:6,5:6)=3*kappa1*(1-eta1/2)*eye(2);
+    H=H+kron(eye(2*(n+1)),temp);
+    temp=zeros(2*3);
+    temp(3:4,3:4)=-kappa2*Gamma2c;
+    temp(5:6,5:6)=-kappa1*Gamma1c;
+    temp=kron(eye(2*n+1),temp);
+    H(5:end-2,1:end-6)=H(5:end-2,1:end-6)+temp;
+    H(1:end-6,5:end-2)=H(1:end-6,5:end-2)+conj(temp);
+    
+    kpara=linspace(-pi,pi,500);
+    BEi=zeros(length(kpara),length(H));
+    for i=1:length(kpara)
+        tH=H;
+        k=kpara(i);
+        T1=Gamma1a+exp(1i*k)*Gamma1b;
+        T2=Gamma1b+Gamma1a*exp(-1i*k);
+        Tb1=Gamma2a+exp(-1i*k)*Gamma2b;
+        Tb2=exp(1i*k)*Gamma2a+Gamma2b;
+        temp=zeros(2*6);
+        temp(1:2,1:2)=-kappa2*Tb2;
+        temp(3:4,3:4)=-kappa1*conj(T1);
+        temp(5:6,5:6)=0*eye(2);
+        temp(7:8,7:8)=-kappa2*conj(Tb1);
+        temp(9:10,9:10)=-kappa1*conj(T2);
+        temp=kron(eye(n+1),temp);
+        temp=temp(1:end-2,1:end-2);
+        tH(3:end,1:end-2)=tH(3:end,1:end-2)+temp;
+        tH(1:end-2,3:end)=tH(1:end-2,3:end)+conj(temp);
+        BEi(i,:)=eig(tH);
+    end
+    BEi(abs(imag(BEi))>1e-6 | real(BEi)<0)=NaN;
+    BEi=sqrt(real(BEi));
+    %% Figure
+    %figure
+    subplot(2,1,2)
+    
+    plot(kpara/pi,BEi,'bo','Markersize',1)
+    %ylim([1.3 2.1]);
 end
